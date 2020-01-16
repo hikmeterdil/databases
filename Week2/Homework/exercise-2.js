@@ -76,6 +76,15 @@ app.get("/adddepartments", (req, res) => {
   res.send("Departments inserted");
 });
 
+app.get('/addForeignKey', (req, res) => {
+  let sql = 'ALTER TABLE employees ADD Constraint FOREIGN KEY(dept_no) REFERENCES departments(dept_no)';
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+    console.table(result);
+    res.send('Foreign Key Added...');
+  });
+});
+
 app.listen("3000", () => {
   console.log("Server started!");
 });

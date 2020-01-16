@@ -98,8 +98,8 @@ app.get("/retrempwithdep", (req, res) => {
 
 //All department numbers and the number of employees working there.
 app.get("/depandempcount", (req, res) => {
-  let sql = `SELECT employees.dept_no, COUNT(*) FROM employees 
-    RIGHT JOIN departments ON employees.dept_no = departments.dept_no GROUP BY  dept_no;`;
+  let sql = `SELECT dept_no, COUNT(emp_no) AS "NumberOfEmployees" FROM departments
+  LEFT JOIN employees ON employees.dept_no = departments.dept_no GROUP BY  dept_no;`;
   db.query(sql, (err, result) => {
     if (err) throw err;
     console.log(result);
