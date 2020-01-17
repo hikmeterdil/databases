@@ -1,102 +1,64 @@
 "use strict";
-const express = require("express");
+
+const util = require("util");
+
 const mysql = require("mysql");
+
 const data = require("./data");
+
 const db = mysql.createConnection({
   host: "localhost",
   user: "hyfuser",
   password: "hyfpassword"
 });
+
+const runQuery = util.promisify(db.query.bind(db));
+
+async function runQueries() {
+  try {
+    console.log(await runQuery("DROP DATABASE company"));
+    console.log(await runQuery("CREATE DATABASE IF NOT EXISTS company;"));
+    console.log(await runQuery("USE company;"));
+    console.log(
+      await runQuery(
+        "CREATE TABLE IF NOT EXISTS employees(emp_no int PRIMARY KEY, emp_name VARCHAR(50),  salary int, reports_to int, FOREIGN KEY(reports_to) REFERENCES employees(emp_no) );"
+      )
+    );
+    console.log(
+      await runQuery(
+        "CREATE TABLE IF NOT EXISTS departments(dept_no int NOT NULL PRIMARY KEY, dept_name VARCHAR(50),  manager int NOT NULL, FOREIGN KEY(manager) REFERENCES employees(emp_no))"
+      )
+    );
+    console.log(
+      await runQuery(
+        "CREATE TABLE IF NOT EXISTS projects(proj_no int NOT NULL PRIMARY KEY, proj_name VARCHAR(50),  starting_date VARCHAR(50), ending_date VARCHAR(50))"
+      )
+    );
+
+    for (const employee of data.employees) {
+      let sql = "INSERT INTO employees SET?";
+      console.log(await runQuery(sql, employee));
+    }
+
+    for (const department of data.departments) {
+      let sql = "INSERT INTO departments SET?";
+      console.log(await runQuery(sql, department));
+    }
+
+    for (const project of data.projects) {
+      let sql = "INSERT INTO projects SET?";
+      console.log(await runQuery(sql, project));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 db.connect(err => {
   if (err) {
     throw err;
   }
   console.log("MySql Connected...");
-});
 
-const app = express();
-
-app.get("/createdb", (req, res) => {
-  let sql = "CREATE DATABASE company";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    console.log(result);
-    res.send("database created");
-  });
-});
-
-app.get("/usedb", (req, res) => {
-  let sql = "USE company";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    console.log(result);
-    res.send("company selected");
-  });
-});
-
-app.get("/createemployees", (req, res) => {
-  let sql =
-    "CREATE TABLE IF NOT EXISTS employees(emp_no int, emp_name VARCHAR(50),  salary int, reports_to int)";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    console.log(result);
-    res.send("Employess table created");
-  });
-});
-
-app.get("/createdepartments", (req, res) => {
-  let sql =
-    "CREATE TABLE IF NOT EXISTS departments(dept_no int, dept_name VARCHAR(50),  manager int)";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    console.log(result);
-    res.send("Departments table created");
-  });
-});
-
-app.get("/createprojects", (req, res) => {
-  let sql =
-    "CREATE TABLE IF NOT EXISTS projects(proj_no int, proj_name VARCHAR(50),  starting_date VARCHAR(50), ending_date VARCHAR(50))";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    console.log(result);
-    res.send("Projects table created");
-  });
-});
-
-app.get("/addemployees", (req, res) => {
-  data.employees.forEach(employee => {
-    let sql = "INSERT INTO employees SET?";
-    let query = db.query(sql, employee, (err, result) => {
-      if (err) throw err;
-      console.log(result);
-    });
-  });
-  res.send("Employees inserted");
-});
-
-app.get("/adddepartments", (req, res) => {
-  data.departments.forEach(department => {
-    let sql = "INSERT INTO departments SET?";
-    let query = db.query(sql, department, (err, result) => {
-      if (err) throw err;
-      console.log(result);
-    });
-  });
-  res.send("Departments inserted");
-});
-
-app.get("/addprojects", (req, res) => {
-  data.projects.forEach(project => {
-    let sql = "INSERT INTO projects SET?";
-    let query = db.query(sql, project, (err, result) => {
-      if (err) throw err;
-      console.log(result);
-    });
-  });
-  res.send("Projects inserted");
-});
-
-app.listen("3000", () => {
-  console.log("Server started!");
+  runQueries();
 });
